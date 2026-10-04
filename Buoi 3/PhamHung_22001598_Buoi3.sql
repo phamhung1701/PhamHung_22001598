@@ -1,15 +1,10 @@
--- BAI THUC HANH BUOI 3 - MYSQL
+-- BTVN BUOI 3 - MYSQL
 -- Ho ten: Phạm Hưng
 -- Ma sinh vien: 22001598
--- File nop bai gom toan bo cau lenh cho ca 2 bai.
--- Chay tren MySQL voi bang cart_items va movies chua ton tai.
--- Khong xoa database hoac bang co san de tranh mat du lieu.
 
 SET NAMES utf8mb4;
 
--- ============================================================
 -- BAI 1: QUAN LY GIO HANG
--- ============================================================
 
 CREATE DATABASE IF NOT EXISTS shopping_cart
     CHARACTER SET utf8mb4
@@ -24,7 +19,6 @@ CREATE TABLE cart_items (
     quantity INT NOT NULL
 );
 
--- Kiem tra cau truc bang.
 DESCRIBE cart_items;
 
 -- 1. Them it nhat 5 san pham.
@@ -62,7 +56,6 @@ UPDATE cart_items
 SET price = 700000.00
 WHERE id = 1;
 
--- Kiem tra gia moi cua Ban phim.
 SELECT id, name, price
 FROM cart_items
 WHERE id = 1;
@@ -72,7 +65,6 @@ UPDATE cart_items
 SET quantity = 7
 WHERE id = 2;
 
--- Kiem tra so luong moi cua Chuot khong day.
 SELECT id, name, quantity
 FROM cart_items
 WHERE id = 2;
@@ -81,7 +73,6 @@ WHERE id = 2;
 DELETE FROM cart_items
 WHERE id = 5;
 
--- Kiem tra san pham da xoa: truy van nay tra ve 0 dong.
 SELECT id, name, price, quantity
 FROM cart_items
 WHERE id = 5;
@@ -96,14 +87,10 @@ FROM cart_items
 ORDER BY id;
 
 -- 10. Tinh tong tien cua toan bo gio hang.
--- Ket qua du kien sau cac thao tac tren: 5340000.00.
 SELECT COALESCE(SUM(price * quantity), 0) AS tong_tien_gio_hang
 FROM cart_items;
 
--- ============================================================
 -- BAI 2: QUAN LY VE XEM PHIM
--- Bang movies duoc dat trong cung database shopping_cart.
--- ============================================================
 
 CREATE TABLE movies (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -113,7 +100,6 @@ CREATE TABLE movies (
     available_seats INT NOT NULL
 );
 
--- Kiem tra cau truc bang.
 DESCRIBE movies;
 
 -- 1. Them it nhat 5 bo phim.
@@ -151,7 +137,6 @@ UPDATE movies
 SET available_seats = 60
 WHERE id = 1;
 
--- Kiem tra so ghe con lai cua Avengers.
 SELECT id, title, total_seats, available_seats
 FROM movies
 WHERE id = 1;
@@ -160,7 +145,6 @@ WHERE id = 1;
 DELETE FROM movies
 WHERE id = 5;
 
--- Kiem tra phim da xoa: truy van nay tra ve 0 dong.
 SELECT id, title, price, total_seats, available_seats
 FROM movies
 WHERE id = 5;
@@ -186,15 +170,12 @@ FROM movies
 ORDER BY id;
 
 -- 10. Tinh tong doanh thu cua tat ca cac phim.
--- Ket qua du kien: 16000000.00.
 SELECT
     COALESCE(SUM((total_seats - available_seats) * price), 0)
         AS tong_doanh_thu
 FROM movies;
 
 -- 11. Tim phim co so ve ban ra nhieu nhat.
--- Dung MAX va truy van con de tra ve tat ca phim dong hang.
--- Ket qua du kien: Avengers va Interstellar, moi phim ban 40 ve.
 SELECT
     id,
     title,
