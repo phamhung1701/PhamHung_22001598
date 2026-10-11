@@ -3,63 +3,53 @@ require_once __DIR__ . '/common/functions.php';
 require_once __DIR__ . '/model/product.php';
 
 $pageTitle = 'Danh sách sản phẩm';
+$error = '';
 $products = [];
-$error = null;
+try {
+    $products = getAllProducts();
+} catch (Throwable $exception) {
+    error_log($exception->getMessage());
+    $error = 'Không thể tải danh sách sản phẩm. Hãy kiểm tra kết nối MySQL.';
+}
+
 $messages = [
     'added' => 'Đã thêm sản phẩm thành công.',
     'updated' => 'Đã cập nhật sản phẩm thành công.',
     'deleted' => 'Đã xóa sản phẩm thành công.',
 ];
-$message = $messages[$_GET['message'] ?? ''] ?? null;
-
-try {
-    $products = getAllProducts();
-} catch (Throwable $exception) {
-    $error = 'Không thể tải danh sách sản phẩm. Hãy kiểm tra kết nối MySQL.';
-}
-
+$status = isset($_GET['status']) && is_string($_GET['status']) ? $_GET['status'] : '';
 require __DIR__ . '/view/header.php';
 ?>
-<section class="page-heading">
-    <div>
-        <h1>Danh sách sản phẩm</h1>
-        <p>Quản lý thông tin các sản phẩm trong kho.</p>
-    </div>
+<div class="page-heading">
+    <h2>Danh sách sản phẩm</h2>
     <a class="button" href="product_add.php">+ Thêm sản phẩm</a>
-</section>
-
-<?php if ($message): ?>
-    <p class="notice success" role="status"><?= e($message) ?></p>
+</div>
+<?php if (isset($messages[$status])): ?>
+    <p class="notice success" role="status"><?= escapeHtml($messages[$status]) ?></p>
 <?php endif; ?>
-<?php if ($error): ?>
-    <p class="notice error" role="alert"><?= e($error) ?></p>
+<?php if ($error !== ''): ?>
+    <p class="notice error" role="alert"><?= escapeHtml($error) ?></p>
 <?php else: ?>
-    <div class="table-container">
+    <div class="table-wrapper">
         <table>
             <thead>
-            <tr>
-                <th>ID</th>
-                <th>Tên sản phẩm</th>
-                <th>Giá</th>
-                <th>Số lượng</th>
-                <th>Chức năng</th>
-            </tr>
+            <tr><th>ID</th><th>Tên sản phẩm</th><th>Giá (VNĐ)</th><th>Số lượng</th><th>Chức năng</th></tr>
             </thead>
             <tbody>
             <?php foreach ($products as $product): ?>
                 <tr>
-                    <td><?= e($product['id']) ?></td>
-                    <td><?= e($product['name']) ?></td>
-                    <td class="number"><?= e(number_format((float) $product['price'], 2, ',', '.')) ?> đ</td>
-                    <td class="number"><?= e($product['quantity']) ?></td>
+                    <td><?= escapeHtml($product['id']) ?></td>
+                    <td><?= escapeHtml($product['name']) ?></td>
+                    <td><?= escapeHtml(number_format((float) $product['price'], 2, ',', '.')) ?></td>
+                    <td><?= escapeHtml($product['quantity']) ?></td>
                     <td class="actions">
-                        <a class="button small secondary" href="product_edit.php?id=<?= (int) $product['id'] ?>">Sửa</a>
-                        <a class="button small danger-outline" href="product_delete.php?id=<?= (int) $product['id'] ?>">Xóa</a>
+                        <a href="product_edit.php?id=<?= urlencode((string) $product['id']) ?>">Sửa</a>
+                        <a class="delete-link" href="product_delete.php?id=<?= urlencode((string) $product['id']) ?>">Xóa</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
-            <?php if (empty($products)): ?>
-                <tr><td colspan="5" class="empty">Chưa có sản phẩm nào.</td></tr>
+            <?php if (count($products) === 0): ?>
+                <tr><td colspan="5" class="empty">Chưa có sản phẩm nào. Hãy thêm sản phẩm mới.</td></tr>
             <?php endif; ?>
             </tbody>
         </table>

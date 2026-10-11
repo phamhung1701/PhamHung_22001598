@@ -1,45 +1,60 @@
-# Buổi 4 - Quản lý sản phẩm giỏ hàng (PHP + MySQL)
+# Bài thực hành 4 – Quản lý giỏ hàng (PHP + MySQL)
 
-Bài thực hành PHP + MySQL: quản lý **sản phẩm** cho hệ thống giỏ hàng, gồm xem danh sách, thêm, sửa, xóa và kiểm tra dữ liệu đầu vào. Đây là bài quản lý sản phẩm theo đề, **không phải** chức năng thêm hàng vào giỏ/thanh toán.
+Bài làm theo đề thực hành: quản lý **sản phẩm** cho hệ thống giỏ hàng, không triển khai thao tác thêm sản phẩm vào giỏ hàng vì đề không yêu cầu.
 
-## Chạy với XAMPP
+## Chạy trên XAMPP (Windows)
 
-1. Bật **Apache** và **MySQL** trong XAMPP.
-2. Mở `http://localhost/phpmyadmin`, chọn **Import**, nhập file `database.sql` để tạo database `shopping_cart`, bảng `products` và 5 sản phẩm mẫu.
-3. Chép thư mục `app` của bài vào `C:\xampp\htdocs\shopping_cart\app`.
-4. Vào `http://localhost/shopping_cart/app/` trên trình duyệt.
-5. Nếu MySQL dùng tài khoản/mật khẩu khác, sửa cấu hình trong `app/common/dbConnect.php` hoặc đặt các biến môi trường `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`.
+1. Bật **Apache** và **MySQL** trong XAMPP Control Panel.
+2. Mở `http://localhost/phpmyadmin`, chọn **Import** và nhập file `database.sql` để tạo database `shopping_cart`, bảng `products` và 5 dòng mẫu.
+3. Sao chép thư mục `app` vào `C:\xampp\htdocs\shopping-cart` (tên thư mục đích là `shopping-cart`).
+4. Truy cập `http://localhost/shopping-cart/`.
+5. Mặc định kết nối MySQL tại `127.0.0.1:3306`, database `shopping_cart`, user `root`, password rỗng (cấu hình XAMPP thường dùng). Nếu khác, chỉnh trong `app/common/dbConnect.php` hoặc các biến môi trường `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`.
 
-Mặc định: host `127.0.0.1`, port `3306`, database `shopping_cart`, tài khoản `root`, mật khẩu rỗng (XAMPP mặc định).
+**Yêu cầu:** PHP 7.4+ với extension `pdo_mysql`; MySQL/MariaDB. `mbstring` là tùy chọn.
 
-## Các file chính
+## Cấu trúc
 
 ```text
-app/
-├── common/
-│   ├── dbConnect.php         # Kết nối MySQL bằng PDO
-│   └── functions.php         # Kiểm tra dữ liệu, escaping, CSRF
-├── model/
-│   └── product.php           # 5 hàm truy vấn CRUD theo đề
-├── view/
-│   ├── header.php
-│   └── footer.php
-├── assets/
-│   └── style.css
-├── index.php                 # Chuyển đến danh sách
-├── product_list.php
-├── product_add.php
-├── product_edit.php
-└── product_delete.php
+Buoi 4/
+├── database.sql
+├── README.md
+└── app/
+    ├── common/
+    │   ├── dbConnect.php
+    │   └── functions.php
+    ├── model/
+    │   └── product.php
+    ├── view/
+    │   ├── header.php
+    │   └── footer.php
+    ├── assets/
+    │   └── styles.css
+    ├── index.php
+    ├── product_list.php
+    ├── product_add.php
+    ├── product_edit.php
+    └── product_delete.php
 ```
 
-## Kiểm thử nhanh
+## Chức năng theo đề
 
-- Danh sách ban đầu có tối thiểu 5 sản phẩm sau khi import SQL.
-- Thêm sản phẩm hợp lệ, sau đó sửa tên/giá/số lượng.
-- Không được thêm hoặc sửa với tên trống, giá bằng/nhỏ hơn 0, hoặc số lượng âm.
-- Xóa có trang xác nhận và chỉ thực hiện bằng POST.
-- Truy cập `product_edit.php?id=999999` hoặc `product_delete.php?id=999999` hiển thị thông báo không tìm thấy.
-- Nếu tắt MySQL, trang hiển thị thông báo lỗi kết nối thay vì lộ thông tin đăng nhập.
+- `common/dbConnect.php`: PDO MySQL, dùng lại kết nối, thông báo khi kết nối thất bại.
+- `model/product.php`: `getAllProducts`, `getProductById`, `addProduct`, `updateProduct`, `deleteProduct`.
+- `product_list.php`: liệt kê ID, tên, giá, số lượng và liên kết Sửa/Xóa.
+- `product_add.php`: form thêm với kiểm tra tên khác rỗng, giá > 0, số lượng >= 0.
+- `product_edit.php`: load theo ID, sửa và kiểm tra đầu vào.
+- `product_delete.php`: trang xác nhận trước khi xóa qua POST; báo lỗi ID không hợp lệ/không tồn tại.
+- `view/header.php` và `view/footer.php`: giao diện HTML dùng chung.
 
-Các truy vấn dùng prepared statements; form sửa/thêm/xóa có CSRF token và xác thực ở server.
+Dữ liệu được gửi bằng POST để thêm/sửa/xóa. SQL sử dụng prepared statement; văn bản được escape trước khi hiển thị; form có CSRF token.
+
+## Thử nhanh
+
+1. Vào Danh sách: ban đầu có 5 sản phẩm từ file SQL.
+2. Thêm sản phẩm hợp lệ, kiểm tra dữ liệu vừa lưu xuất hiện trong bảng.
+3. Thử nhập tên trống, giá bằng 0, số lượng âm: form phải từ chối.
+4. Sửa sản phẩm, kiểm tra tên/giá/số lượng được cập nhật.
+5. Chọn Xóa, xác nhận rồi kiểm tra sản phẩm biến mất; nhấn Hủy thì không xóa.
+6. Truy cập `product_edit.php?id=999999` hoặc `product_delete.php?id=999999`: báo không tồn tại.
+
+Có thể kiểm tra cú pháp với `php -l` cho từng file `.php`. Bài cần một MySQL server để chạy thử toàn bộ thao tác CRUD.
