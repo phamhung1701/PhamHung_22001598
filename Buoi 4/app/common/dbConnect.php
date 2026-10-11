@@ -1,5 +1,5 @@
 <?php
-/** Kết nối MySQL dùng chung cho các trang và model. */
+/** Create and reuse one PDO connection for the current request. */
 function getDbConnection(): PDO
 {
     static $connection = null;
@@ -12,24 +12,31 @@ function getDbConnection(): PDO
     $database = getenv('DB_NAME') ?: 'shopping_cart';
     $username = getenv('DB_USER') ?: 'root';
     $password = getenv('DB_PASS');
-    if ($password === false) {
-        $password = '';
+    $password = $password === false ? '' : $password;
+
+    // Do not allow untrusted environment values to change DSN structure.
+    if (!ctype_digit((string) $port) || (int) $port < 1 || (int) $port > 65535
+        || !preg_match('/^[a-zA-Z0-9_.-]+$/', $host)
+        || !preg_match('/^[a-zA-Z0-9_]+$/', $database)) {
+        throw new RuntimeException('Cấu hình database không hợp lệ.');
     }
 
     try {
-        $dsn = "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4";
-        $connection = new PDO($dsn, $username, $password, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-        ]);
+        $connection = new PDO(
+            "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
+            $username,
+            $password,
+            [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+            ]
+        );
+        return $connection;
     } catch (PDOException $exception) {
+        error_log('MySQL connection failed: ' . $exception->getMessage());
         throw new RuntimeException(
-            'Không thể kết nối MySQL. Hãy kiểm tra MySQL, database và cấu hình kết nối.',
-            0,
-            $exception
+            'Không thể kết nối MySQL. Kiểm tra MySQL đã chạy và cấu hình trong common/dbConnect.php.'
         );
     }
-
-    return $connection;
 }

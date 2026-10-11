@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($pageTitle ?? 'Quản lý sản phẩm') ?> - Giỏ hàng</title>
-    <link rel="stylesheet" href="assets/style.css">
+    <title><?= escapeHtml($pageTitle ?? 'Quản lý sản phẩm') ?></title>
+    <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
 <header class="site-header">
-    <div class="container nav-bar">
-        <a class="brand" href="product_list.php">Quản lý sản phẩm</a>
+    <div class="container header-content">
+        <div>
+            <h1>Quản lý giỏ hàng</h1>
+            <p>Bài thực hành PHP + MySQL – Quản lý sản phẩm</p>
+        </div>
         <nav aria-label="Điều hướng chính">
             <a href="product_list.php">Danh sách</a>
             <a href="product_add.php">Thêm sản phẩm</a>

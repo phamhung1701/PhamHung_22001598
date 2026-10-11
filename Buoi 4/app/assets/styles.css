@@ -1,0 +1,35 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #f6f8fb; color: #1d2939; font: 16px/1.5 Arial, Helvetica, sans-serif; }
+.container { width: min(100% - 32px, 960px); margin: 0 auto; }
+.site-header { background: #17365d; color: #fff; padding: 18px 0; }
+.header-content { display: flex; gap: 24px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+.site-header h1 { font-size: 25px; margin: 0; }
+.site-header p { margin: 2px 0 0; color: #d9e6f5; }
+nav { display: flex; gap: 10px; }
+nav a { color: #fff; text-decoration: none; padding: 7px 11px; border-radius: 5px; border: 1px solid #7690ac; }
+nav a:hover { background: #31577f; }
+main { min-height: 65vh; padding-top: 28px; padding-bottom: 40px; }
+h2 { margin-top: 0; }
+a { color: #1456a0; }
+.page-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.table-wrapper { overflow-x: auto; border-radius: 8px; background: #fff; box-shadow: 0 1px 4px #0001; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e5e8ee; }
+th { background: #e8eef6; white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+.actions { display: flex; gap: 14px; }
+.delete-link { color: #b42e36; }
+.empty { text-align: center; padding: 24px; color: #556070; }
+.product-form { max-width: 540px; background: #fff; padding: 24px; border: 1px solid #dfe4ec; border-radius: 8px; display: grid; gap: 8px; }
+.product-form label { font-weight: bold; margin-top: 8px; }
+.product-form input { font: inherit; border: 1px solid #9daab9; border-radius: 5px; padding: 10px; width: 100%; }
+.form-actions, .inline-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+button, .button { display: inline-block; font: inherit; cursor: pointer; border: 0; background: #1c65ae; color: #fff; padding: 9px 15px; border-radius: 5px; text-decoration: none; }
+button:hover, .button:hover { filter: brightness(.92); }
+.secondary { background: #e8ecf1; color: #1d2939; }
+.danger { background: #b42e36; }
+.notice { padding: 12px 15px; border-radius: 6px; margin: 14px 0; }
+.notice ul { margin: 5px 0; padding-left: 22px; }
+.success { color: #175c32; background: #e2f5e9; border: 1px solid #b3e2c4; }
+.error { color: #90242a; background: #fce9eb; border: 1px solid #efb8bb; }
+.site-footer { padding: 15px 0; border-top: 1px solid #dde2e9; color: #667085; font-size: 14px; }

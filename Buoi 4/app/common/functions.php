@@ -1,66 +1,72 @@
 <?php
-/** Các hàm hỗ trợ hiển thị, kiểm tra dữ liệu và bảo vệ form. */
-function e($value): string
+function escapeHtml($value): string
 {
     return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-function positiveIdFromQuery(): ?int
+function readProductId($value): ?int
 {
-    $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT, [
-        'options' => ['min_range' => 1],
-    ]);
-    return $id === false || $id === null ? null : $id;
+    if (!is_string($value) && !is_int($value)) {
+        return null;
+    }
+    $id = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    return $id === false ? null : $id;
 }
 
+/** @return array{errors: string[], name: string, price: string, quantity: string} */
 function validateProductInput(array $input): array
 {
-    $name = trim((string) ($input['name'] ?? ''));
-    $price = trim((string) ($input['price'] ?? ''));
-    $quantity = trim((string) ($input['quantity'] ?? ''));
+    $name = isset($input['name']) && is_scalar($input['name']) ? trim((string) $input['name']) : '';
+    $price = isset($input['price']) && is_scalar($input['price']) ? trim((string) $input['price']) : '';
+    $quantity = isset($input['quantity']) && is_scalar($input['quantity']) ? trim((string) $input['quantity']) : '';
     $errors = [];
 
-    $nameLength = function_exists('mb_strlen')
-        ? mb_strlen($name, 'UTF-8')
-        : preg_match_all('/./us', $name);
-
     if ($name === '') {
-        $errors['name'] = 'Tên sản phẩm không được để trống.';
-    } elseif ($nameLength === false || $nameLength > 100) {
-        $errors['name'] = 'Tên sản phẩm không được vượt quá 100 ký tự.';
+        $errors[] = 'Tên sản phẩm không được để trống.';
+    } elseif (mbLength($name) > 100) {
+        $errors[] = 'Tên sản phẩm không được vượt quá 100 ký tự.';
     }
 
-    // DECIMAL(10,2): tối đa 8 chữ số nguyên và 2 chữ số thập phân.
-    if (!preg_match('/^\d{1,8}(?:\.\d{1,2})?$/', $price) || (float) $price <= 0) {
-        $errors['price'] = 'Giá phải lớn hơn 0, tối đa 2 chữ số thập phân.';
+    // DECIMAL(10,2): at most 8 digits before and 2 digits after the dot.
+    if (!preg_match('/^\d{1,8}(?:\.\d{1,2})?$/D', $price) || (float) $price <= 0) {
+        $errors[] = 'Giá phải lớn hơn 0 và có tối đa 2 chữ số thập phân (ví dụ 15000 hoặc 15000.50).';
     }
 
-    $quantityNumber = filter_var($quantity, FILTER_VALIDATE_INT, [
-        'options' => ['min_range' => 0],
-    ]);
-    if ($quantityNumber === false) {
-        $errors['quantity'] = 'Số lượng phải là số nguyên lớn hơn hoặc bằng 0.';
+    if (!ctype_digit($quantity) || strlen($quantity) > 10
+        || (float) $quantity > 2147483647) {
+        $errors[] = 'Số lượng phải là số nguyên từ 0 đến 2147483647.';
     }
 
-    return [$errors, [
-        'name' => $name,
-        'price' => $price,
-        'quantity' => $quantity,
-    ]];
+    return ['errors' => $errors, 'name' => $name, 'price' => $price, 'quantity' => $quantity];
 }
 
-function csrfToken(): string
+function mbLength(string $text): int
+{
+    if (function_exists('mb_strlen')) {
+        return mb_strlen($text, 'UTF-8');
+    }
+    return preg_match_all('/./us', $text, $matches) ?: 0;
+}
+
+function startProductSession(): void
 {
     if (session_status() !== PHP_SESSION_ACTIVE) {
         session_start();
     }
-    if (empty($_SESSION['csrf_token'])) {
+}
+
+function getCsrfToken(): string
+{
+    startProductSession();
+    if (!isset($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
     return $_SESSION['csrf_token'];
 }
 
-function validCsrfToken($token): bool
+function isValidCsrfToken($submitted): bool
 {
-    return is_string($token) && hash_equals(csrfToken(), $token);
+    startProductSession();
+    return is_string($submitted) && isset($_SESSION['csrf_token'])
+        && hash_equals($_SESSION['csrf_token'], $submitted);
 }
