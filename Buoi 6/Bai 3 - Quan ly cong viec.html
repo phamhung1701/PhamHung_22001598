@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 3 - Quản lý công việc cá nhân</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;padding:32px 16px;background:#101827;color:#e5e7eb;font-family:Arial,sans-serif}
+    #app{max-width:760px;margin:auto}.card{background:#1d293b;border:1px solid #344256;border-radius:18px;padding:28px;box-shadow:0 18px 45px #0003}
+    h1{margin:0 0 8px;font-size:28px}.muted{color:#9caec4;margin:0 0 24px}.add-row{display:flex;gap:10px;margin-bottom:20px}
+    input[type=text]{flex:1;min-width:0;padding:13px;border-radius:9px;border:1px solid #46566c;background:#111c2c;color:#fff;font-size:16px}
+    button,select{border:0;border-radius:9px;padding:12px 16px;font-weight:700;cursor:pointer}button{background:#38bdf8;color:#082032}button.secondary{background:#475569;color:#fff}button.danger{background:#7f1d1d;color:#fecaca}button:disabled{opacity:.4;cursor:not-allowed}
+    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}.toolbar select{background:#111c2c;color:#fff;border:1px solid #46566c}
+    .stats{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.stat{padding:10px 13px;border-radius:10px;background:#111c2c;color:#cbd5e1}.stat strong{color:#67e8f9}
+    ul{list-style:none;padding:0;margin:0}.task{display:flex;align-items:center;gap:12px;padding:14px 12px;border-bottom:1px solid #344256}.task:last-child{border-bottom:0}.task label{flex:1;display:flex;align-items:center;gap:10px;overflow-wrap:anywhere}.task input{width:18px;height:18px;accent-color:#38bdf8;flex-shrink:0}.done{text-decoration:line-through;color:#8191a6}.delete{padding:8px 11px;background:#3f2630;color:#fda4af}
+    .empty{text-align:center;padding:28px 12px;color:#9caec4;background:#111c2c;border-radius:12px}.footer{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;color:#9caec4;font-size:14px}.notice{color:#fca5a5;margin:0 0 14px}
+    @media(max-width:520px){.card{padding:20px}.add-row{flex-wrap:wrap}.add-row input{flex-basis:100%}.task{padding:12px 4px}}
+  </style>
+</head>
+<body>
+<div id="app">
+  <section class="card">
+    <h1>✓ Công việc hôm nay</h1>
+    <p class="muted">Ghi lại việc cần làm và theo dõi tiến độ trong ngày.</p>
+    <form class="add-row" @submit.prevent="addTask">
+      <input type="text" v-model.trim="newTaskName" @keyup.enter="addTask" placeholder="Ví dụ: Hoàn thành bài tập VueJS..." aria-label="Tên công việc">
+      <button type="submit">+ Thêm</button>
+    </form>
+    <p v-if="message" class="notice" role="status">{{ message }}</p>
+    <div class="toolbar">
+      <label for="filter">Hiển thị:
+        <select id="filter" v-model="filter">
+          <option value="all">Tất cả</option>
+          <option value="active">Chưa hoàn thành</option>
+          <option value="done">Đã hoàn thành</option>
+        </select>
+      </label>
+      <button class="secondary" type="button" @click="clearCompleted" :disabled="completedCount === 0">Xóa các việc đã hoàn thành</button>
+    </div>
+    <div class="stats">
+      <div class="stat">Tổng công việc: <strong>{{ totalCount }}</strong></div>
+      <div class="stat">Chưa hoàn thành: <strong>{{ remainingCount }}</strong></div>
+      <div class="stat">Đã hoàn thành: <strong>{{ completedCount }}</strong></div>
+    </div>
+    <ul v-if="filteredTasks.length > 0">
+      <li class="task" v-for="task in filteredTasks" :key="task.id">
+        <label :class="{ done: task.completed }">
+          <input type="checkbox" v-model="task.completed" :aria-label="'Đánh dấu hoàn thành: ' + task.name">
+          <span>{{ task.name }}</span>
+        </label>
+        <button class="delete" type="button" @click="deleteTask(task.id)" :aria-label="'Xóa ' + task.name">Xóa</button>
+      </li>
+    </ul>
+    <div v-else class="empty">
+      <p v-if="tasks.length === 0">Danh sách đang trống. Hãy thêm công việc đầu tiên!</p>
+      <p v-else-if="filter === 'active'">Không còn công việc nào chưa hoàn thành.</p>
+      <p v-else-if="filter === 'done'">Chưa có công việc nào hoàn thành.</p>
+      <p v-else>Không tìm thấy công việc phù hợp.</p>
+    </div>
+    <div class="footer">
+      <span>{{ remainingCount === 0 ? 'Tuyệt vời! Bạn đã hoàn thành mọi việc.' : 'Cố lên nhé, từng việc một!' }}</span>
+      <button class="secondary" type="button" @click="clearAll" :disabled="tasks.length === 0">Xóa tất cả</button>
+    </div>
+  </section>
+</div>
+<script>
+const { createApp } = Vue;
+createApp({
+  data() {
+    return {
+      newTaskName: '',
+      nextId: 4,
+      filter: 'all',
+      message: '',
+      tasks: [
+        { id: 1, name: 'Hoàn thành bài tập VueJS', completed: false },
+        { id: 2, name: 'Ôn lại kiến thức computed', completed: true },
+        { id: 3, name: 'Kiểm tra lại giao diện', completed: false }
+      ]
+    };
+  },
+  computed: {
+    filteredTasks() {
+      if (this.filter === 'active') return this.tasks.filter(task => !task.completed);
+      if (this.filter === 'done') return this.tasks.filter(task => task.completed);
+      return this.tasks;
+    },
+    totalCount() { return this.tasks.length; },
+    remainingCount() { return this.tasks.filter(task => !task.completed).length; },
+    completedCount() { return this.tasks.filter(task => task.completed).length; }
+  },
+  methods: {
+    addTask() {
+      const name = this.newTaskName.trim();
+      if (!name) { this.message = 'Vui lòng nhập tên công việc.'; return; }
+      this.tasks.push({ id: this.nextId++, name, completed: false });
+      this.newTaskName = '';
+      this.message = '';
+    },
+    deleteTask(id) {
+      this.tasks = this.tasks.filter(task => task.id !== id);
+      this.message = '';
+    },
+    clearCompleted() {
+      this.tasks = this.tasks.filter(task => !task.completed);
+      this.message = '';
+    },
+    clearAll() {
+      this.tasks = [];
+      this.message = '';
+    }
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
