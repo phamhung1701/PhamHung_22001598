@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 2 - Đặt vé xem phim</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#101827;color:#e5e7eb;min-height:100vh;padding:32px 16px}
+    #app{max-width:760px;margin:auto}.card{background:#1d293b;border:1px solid #344256;border-radius:18px;padding:28px;box-shadow:0 18px 45px #0003}
+    h1{margin:0 0 8px;font-size:28px} .muted{color:#9caec4;margin:0 0 24px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    label,.field-title{display:block;font-weight:700;margin-bottom:8px}input[type=text],input[type=number],select{width:100%;padding:12px;border-radius:9px;border:1px solid #46566c;background:#111c2c;color:#fff;font-size:16px}
+    .field{margin-bottom:18px}.choices{display:flex;gap:18px;flex-wrap:wrap}.choice{display:flex;gap:8px;align-items:center;background:#111c2c;padding:12px;border-radius:9px;border:1px solid #344256}
+    .quantity{display:flex;gap:8px}.quantity input{text-align:center}.btn{border:0;border-radius:9px;padding:12px 16px;font-weight:700;cursor:pointer;background:#64748b;color:white}.btn.primary{background:#38bdf8;color:#082032}.btn:disabled{opacity:.4;cursor:not-allowed}.summary{margin-top:8px;padding:18px;border-radius:12px;background:#111c2c}.line{display:flex;justify-content:space-between;gap:16px;margin:10px 0;color:#cbd5e1}.total{font-size:24px;font-weight:800;color:#67e8f9;border-top:1px solid #344256;padding-top:14px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.confirm{margin-top:20px;background:#12382f;border:1px solid #2b8a6e;border-radius:12px;padding:18px}.error{color:#fca5a5;font-size:13px;margin-top:6px}
+    @media(max-width:600px){.grid{grid-template-columns:1fr}.card{padding:20px}}
+  </style>
+</head>
+<body>
+<div id="app">
+  <section class="card">
+    <h1>🎬 Đặt vé xem phim</h1>
+    <p class="muted">Chọn suất chiếu, loại vé và số lượng để tính tiền.</p>
+    <form @submit.prevent="bookTicket">
+      <div class="field">
+        <label for="customer">Họ tên khách hàng</label>
+        <input id="customer" type="text" v-model.trim="customerName" placeholder="Nhập họ tên của bạn">
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label for="showtime">Suất chiếu</label>
+          <select id="showtime" v-model="showtime">
+            <option value="09:00">09:00 - Suất sáng</option>
+            <option value="14:00">14:00 - Suất chiều</option>
+            <option value="19:30">19:30 - Suất tối</option>
+            <option value="21:15">21:15 - Suất muộn</option>
+          </select>
+        </div>
+        <div class="field">
+          <span class="field-title">Loại vé</span>
+          <div class="choices">
+            <label class="choice"><input type="radio" value="normal" v-model="ticketType"> Vé thường — 70.000đ</label>
+            <label class="choice"><input type="radio" value="vip" v-model="ticketType"> Vé VIP — 100.000đ</label>
+          </div>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label for="quantity">Số lượng vé (1–10)</label>
+          <div class="quantity">
+            <button class="btn" type="button" @click="decreaseQuantity" :disabled="quantity <= 1">−</button>
+            <input id="quantity" type="number" v-model.number="quantity" min="1" max="10" step="1">
+            <button class="btn" type="button" @click="increaseQuantity" :disabled="quantity >= 10">+</button>
+          </div>
+          <p v-if="!isQuantityValid" class="error">Số lượng phải là số nguyên từ 1 đến 10.</p>
+        </div>
+        <div class="field">
+          <span class="field-title">Combo bắp nước</span>
+          <label class="choice"><input type="checkbox" v-model="hasCombo"> Thêm combo (+45.000đ/đơn)</label>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="line"><span>Giá vé</span><strong>{{ formatMoney(ticketPrice) }}</strong></div>
+        <div class="line"><span>Số lượng</span><strong>{{ isQuantityValid ? quantity : '—' }}</strong></div>
+        <div class="line"><span>Combo bắp nước</span><strong>{{ formatMoney(comboPrice) }}</strong></div>
+        <div class="line total"><span>Tổng tiền</span><strong>{{ formatMoney(totalPrice) }}</strong></div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" type="submit" :disabled="!canBook">Đặt vé</button>
+        <button class="btn" type="button" @click="resetForm">Đặt lại form</button>
+      </div>
+    </form>
+    <section v-if="confirmation" class="confirm" aria-live="polite">
+      <h2>✓ Đặt vé thành công!</h2>
+      <p><strong>Khách hàng:</strong> {{ confirmation.customerName }}</p>
+      <p><strong>Suất chiếu:</strong> {{ confirmation.showtime }}</p>
+      <p><strong>Loại vé:</strong> {{ confirmation.ticketType }}</p>
+      <p><strong>Số lượng:</strong> {{ confirmation.quantity }} vé</p>
+      <p><strong>Combo:</strong> {{ confirmation.hasCombo ? 'Có' : 'Không' }}</p>
+      <p><strong>Tổng thanh toán:</strong> {{ formatMoney(confirmation.totalPrice) }}</p>
+    </section>
+  </section>
+</div>
+<script>
+const { createApp } = Vue;
+createApp({
+  data() {
+    return { customerName: '', showtime: '19:30', ticketType: 'normal', quantity: 1, hasCombo: false, confirmation: null };
+  },
+  computed: {
+    ticketPrice() { return this.ticketType === 'vip' ? 100000 : 70000; },
+    comboPrice() { return this.hasCombo ? 45000 : 0; },
+    isQuantityValid() { return Number.isInteger(this.quantity) && this.quantity >= 1 && this.quantity <= 10; },
+    canBook() { return this.customerName.length > 0 && this.isQuantityValid; },
+    totalPrice() { return this.ticketPrice * (this.isQuantityValid ? this.quantity : 0) + this.comboPrice; }
+  },
+  methods: {
+    formatMoney(value) { return new Intl.NumberFormat('vi-VN').format(value) + ' đồng'; },
+    increaseQuantity() { if (this.quantity < 10) this.quantity++; },
+    decreaseQuantity() { if (this.quantity > 1) this.quantity--; },
+    resetForm() { this.customerName = ''; this.showtime = '19:30'; this.ticketType = 'normal'; this.quantity = 1; this.hasCombo = false; this.confirmation = null; },
+    bookTicket() {
+      if (!this.canBook) return;
+      this.confirmation = { customerName: this.customerName, showtime: this.showtime, ticketType: this.ticketType === 'vip' ? 'Vé VIP' : 'Vé thường', quantity: this.quantity, hasCombo: this.hasCombo, totalPrice: this.totalPrice };
+    }
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
