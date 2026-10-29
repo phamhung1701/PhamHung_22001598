@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 6 - Thẻ thông tin sinh viên VueJS</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px 16px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1f2937;
+      background: #f3f6fb;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; text-align: center; color: #1d4ed8; }
+    .subtitle { margin: 0 0 28px; text-align: center; color: #64748b; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+    .card, .editor {
+      padding: 24px;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .08);
+    }
+    .student-header { display: flex; align-items: center; gap: 18px; margin-bottom: 22px; }
+    .avatar { width: 104px; height: 104px; flex-shrink: 0; border-radius: 50%; object-fit: cover; border: 4px solid #dbeafe; }
+    .student-name { margin: 0 0 8px; font-size: 1.35rem; }
+    .student-id { color: #64748b; margin: 0; }
+    .info-row { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+    .info-row:last-of-type { border-bottom: 0; }
+    .label { color: #64748b; }
+    .value { font-weight: 600; text-align: right; }
+    .classification { font-weight: 700; }
+    .excellent { color: #15803d; }
+    .good { color: #2563eb; }
+    .average { color: #b45309; }
+    .failed { color: #dc2626; }
+    .status { display: inline-block; padding: 5px 10px; border-radius: 999px; font-size: .9rem; }
+    .active { background: #dcfce7; color: #166534; }
+    .inactive { background: #fee2e2; color: #991b1b; }
+    .intro { margin-top: 18px; padding: 14px; background: #eff6ff; border-radius: 10px; line-height: 1.6; }
+    button { border: 0; border-radius: 8px; padding: 10px 14px; color: #fff; background: #2563eb; cursor: pointer; font-weight: 600; }
+    button:hover { background: #1d4ed8; }
+    .editor h2, .card h2 { margin-top: 0; }
+    .field { margin-bottom: 14px; }
+    label { display: block; margin-bottom: 6px; font-size: .92rem; font-weight: 600; }
+    input[type="text"], input[type="number"], input[type="url"] {
+      width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit;
+    }
+    input[type="checkbox"] { margin-right: 8px; }
+    .checkbox-label { display: flex; align-items: center; font-weight: 500; }
+    .hint { margin-top: 18px; color: #64748b; font-size: .88rem; line-height: 1.5; }
+    @media (max-width: 700px) { .layout { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <h1>Thẻ thông tin sinh viên</h1>
+    <p class="subtitle">Bài thực hành số 6 — VueJS</p>
+
+    <div class="layout">
+      <section class="card">
+        <div class="student-header">
+          <img class="avatar" v-bind:src="avatar" v-bind:alt="'Ảnh đại diện của ' + fullName">
+          <div>
+            <h2 class="student-name">{{ fullName }}</h2>
+            <p class="student-id">Mã sinh viên: {{ studentId }}</p>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <span class="label">Lớp</span>
+          <span class="value" v-text="className"></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Điểm trung bình</span>
+          <span class="value">{{ average.toFixed(1) }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Xếp loại</span>
+          <span class="classification"
+                :class="gradeClass">
+            <span v-if="average >= 8">Giỏi</span>
+            <span v-else-if="average >= 6.5">Khá</span>
+            <span v-else-if="average >= 5">Trung bình</span>
+            <span v-else>Chưa đạt</span>
+          </span>
+        </div>
+        <div class="info-row">
+          <span class="label">Trạng thái</span>
+          <span class="status" :class="isStudying ? 'active' : 'inactive'">
+            {{ isStudying ? 'Đang học' : 'Đã nghỉ' }}
+          </span>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <button type="button" @click="showIntroduction = !showIntroduction">
+            {{ showIntroduction ? 'Ẩn giới thiệu' : 'Xem giới thiệu' }}
+          </button>
+          <div class="intro" v-show="showIntroduction">
+            <strong>Giới thiệu:</strong>
+            Xin chào, mình là {{ fullName }}, sinh viên lớp {{ className }}.
+            Mình luôn cố gắng học tập và cải thiện kết quả của bản thân.
+          </div>
+        </div>
+      </section>
+
+      <section class="editor">
+        <h2>Thay đổi dữ liệu</h2>
+        <p>Chỉnh sửa thông tin bên dưới để quan sát giao diện tự cập nhật.</p>
+
+        <div class="field">
+          <label for="studentId">Mã sinh viên</label>
+          <input id="studentId" type="text" v-model="studentId">
+        </div>
+        <div class="field">
+          <label for="fullName">Họ và tên</label>
+          <input id="fullName" type="text" v-model="fullName">
+        </div>
+        <div class="field">
+          <label for="className">Lớp</label>
+          <input id="className" type="text" v-model="className">
+        </div>
+        <div class="field">
+          <label for="avatar">Đường dẫn ảnh đại diện</label>
+          <input id="avatar" type="url" v-model="avatar">
+        </div>
+        <div class="field">
+          <label for="average">Điểm trung bình (0–10)</label>
+          <input id="average" type="number" min="0" max="10" step="0.1"
+                 v-model.number="average">
+        </div>
+        <div class="field">
+          <label class="checkbox-label">
+            <input type="checkbox" v-model="isStudying">
+            Sinh viên đang học
+          </label>
+        </div>
+        <p class="hint">
+          Ví dụ: nhập điểm 8 để xem xếp loại Giỏi, 6.5 để xem Khá,
+          5 để xem Trung bình và dưới 5 để xem Chưa đạt.
+        </p>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          studentId: '22001598',
+          fullName: 'Phạm Hưng',
+          className: 'CNTT-K22',
+          avatar: 'https://placehold.co/240x240/e0e7ff/1e40af?text=Sinh+Vien',
+          average: 8.2,
+          isStudying: true,
+          showIntroduction: true
+        };
+      },
+      computed: {
+        gradeClass() {
+          if (this.average >= 8) return 'excellent';
+          if (this.average >= 6.5) return 'good';
+          if (this.average >= 5) return 'average';
+          return 'failed';
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
