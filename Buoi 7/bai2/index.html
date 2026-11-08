@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 2 - Danh mục sản phẩm bằng component</title>
+  <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.js"></script>
+  <script src="components/TheSanPham.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1100px; margin: 20px auto; padding: 0 16px; }
+    .luoi { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+    .the { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+    .the img { width: 100%; height: 150px; object-fit: cover; border-radius: 4px; }
+    .the h3 { margin: 8px 0 4px; }
+    .gia { color: #d32f2f; font-weight: bold; margin: 4px 0; }
+    .nhan { padding: 2px 8px; border-radius: 10px; font-size: 12px; color: #fff; }
+    .nhan.con { background: #2e7d32; }
+    .nhan.het { background: #c62828; }
+    .mo-ta { background: #f5f5f5; padding: 8px; border-radius: 4px; font-size: 14px; }
+    .nut { display: flex; gap: 8px; }
+    button { padding: 6px 12px; cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .5; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>Danh mục sản phẩm</h1>
+  <div class="luoi">
+    <the-san-pham
+      v-for="sp in sanPhams"
+      :key="sp.id"
+      :ten="sp.ten"
+      :gia="sp.gia"
+      :anh="sp.anh"
+      :mo-ta="sp.moTa"
+      :so-luong-ton="sp.soLuongTon">
+    </the-san-pham>
+  </div>
+</div>
+<script>
+const app = Vue.createApp({
+  data() {
+    return {
+      sanPhams: [
+        { id: 1, ten: 'Bàn phím cơ', gia: 1200000, anh: 'https://placehold.co/300x200?text=Ban+phim', moTa: 'Bàn phím cơ switch đỏ, đèn nền RGB, kết nối USB-C.', soLuongTon: 8 },
+        { id: 2, ten: 'Chuột không dây', gia: 450000, anh: 'https://placehold.co/300x200?text=Chuot', moTa: 'Chuột không dây 2.4GHz, pin dùng 12 tháng.', soLuongTon: 0 },
+        { id: 3, ten: 'Tai nghe Bluetooth', gia: 900000, anh: 'https://placehold.co/300x200?text=Tai+nghe', moTa: 'Tai nghe chống ồn chủ động, thời lượng pin 30 giờ.', soLuongTon: 15 },
+        { id: 4, ten: 'Lót chuột', gia: 120000, soLuongTon: 3 }
+      ]
+    };
+  }
+});
+app.component('the-san-pham', TheSanPham);
+app.mount('#app');
+</script>
+</body>
+</html>
