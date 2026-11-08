@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 3 - Giỏ hàng với props và $emit</title>
+  <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f2f2f2; }
+    button { padding: 4px 10px; cursor: pointer; }
+    .so-luong { display: inline-block; min-width: 28px; text-align: center; }
+    .tong { margin-top: 12px; font-size: 18px; }
+    .trong { padding: 20px; text-align: center; color: #777; border: 1px dashed #ccc; }
+    .loi { color: #c62828; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>Giỏ hàng</h1>
+  <p v-if="gioHang.length === 0" class="trong">Giỏ hàng trống</p>
+  <template v-else>
+    <table>
+      <thead>
+        <tr><th>Sản phẩm</th><th>Đơn giá</th><th>Số lượng</th><th>Thành tiền</th><th></th></tr>
+      </thead>
+      <tbody>
+        <tr is="vue:dong-gio-hang"
+            v-for="item in gioHang"
+            :key="item.id"
+            :san-pham="item"
+            @doi-so-luong="doiSoLuong"
+            @yeu-cau-xoa="xoaSanPham">
+        </tr>
+      </tbody>
+    </table>
+    <div class="tong">
+      Tổng số lượng: <strong>{{ tongSoLuong }}</strong><br>
+      Tổng tiền: <strong>{{ dinhDangTien(tongTien) }}</strong>
+    </div>
+  </template>
+  <p v-if="loi" class="loi">{{ loi }}</p>
+</div>
+<script>
+const dinhDangTien = so => so.toLocaleString('vi-VN') + ' đồng';
+const DongGioHang = {
+  props: { sanPham: { type: Object, required: true } },
+  emits: ['doi-so-luong', 'yeu-cau-xoa'],
+  computed: {
+    thanhTien() { return this.sanPham.donGia * this.sanPham.soLuong; }
+  },
+  methods: {
+    dinhDangTien,
+    tang() { this.$emit('doi-so-luong', this.sanPham.id, this.sanPham.soLuong + 1); },
+    giam() { this.$emit('doi-so-luong', this.sanPham.id, this.sanPham.soLuong - 1); },
+    xoa() { this.$emit('yeu-cau-xoa', this.sanPham.id); }
+  },
+  template: `
+    <tr>
+      <td>{{ sanPham.ten }}</td>
+      <td>{{ dinhDangTien(sanPham.donGia) }}</td>
+      <td>
+        <button @click="giam" :disabled="sanPham.soLuong <= 1">-</button>
+        <span class="so-luong">{{ sanPham.soLuong }}</span>
+        <button @click="tang" :disabled="sanPham.soLuong >= 99">+</button>
+      </td>
+      <td>{{ dinhDangTien(thanhTien) }}</td>
+      <td><button @click="xoa">Xóa</button></td>
+    </tr>
+  `
+};
+const app = Vue.createApp({
+  data() {
+    return {
+      loi: '',
+      gioHang: [
+        { id: 1, ten: 'Bút', donGia: 5000, soLuong: 2 },
+        { id: 2, ten: 'Quyển vở', donGia: 12000, soLuong: 3 }
+      ]
+    };
+  },
+  computed: {
+    tongSoLuong() { return this.gioHang.reduce((tong, sp) => tong + sp.soLuong, 0); },
+    tongTien() { return this.gioHang.reduce((tong, sp) => tong + sp.donGia * sp.soLuong, 0); }
+  },
+  methods: {
+    dinhDangTien,
+    doiSoLuong(id, soLuongMoi) {
+      if (!Number.isInteger(soLuongMoi) || soLuongMoi < 1 || soLuongMoi > 99) {
+        this.loi = 'Số lượng phải là số nguyên từ 1 đến 99.';
+        return;
+      }
+      const sp = this.gioHang.find(item => item.id === id);
+      if (!sp) return;
+      this.loi = '';
+      sp.soLuong = soLuongMoi;
+    },
+    xoaSanPham(id) {
+      this.gioHang = this.gioHang.filter(item => item.id !== id);
+      this.loi = '';
+    }
+  }
+});
+app.component('dong-gio-hang', DongGioHang);
+app.mount('#app');
+</script>
+</body>
+</html>
