@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 1 - Danh sách sản phẩm</title>
+  <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1000px; margin: 20px auto; padding: 0 16px; }
+    h1 { margin-bottom: 4px; }
+    .status { color: #555; margin-bottom: 16px; }
+    .toolbar, .form { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    input, select, button { padding: 6px 10px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f2f2f2; }
+    .badge { padding: 2px 8px; border-radius: 10px; color: #fff; font-size: 12px; }
+    .con-hang { background: #2e7d32; }
+    .het-hang { background: #c62828; }
+    .notice { color: #e65100; margin: 4px 0; }
+    .error { color: #c62828; margin: 2px 0; }
+    .stats { background: #e3f2fd; padding: 10px; margin-top: 12px; border-radius: 4px; }
+    .btn-xoa { background: #c62828; color: #fff; border: none; cursor: pointer; }
+    fieldset { margin-top: 16px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>Quản lý sản phẩm</h1>
+  <p class="status">Trạng thái: <strong>{{ trangThai }}</strong></p>
+
+  <div class="toolbar">
+    <input v-model="tuKhoa" placeholder="Tìm theo tên...">
+    <select v-model="danhMucLoc">
+      <option value="">-- Tất cả danh mục --</option>
+      <option v-for="dm in danhMucs" :key="dm" :value="dm">{{ dm }}</option>
+    </select>
+    <select v-model="kieuSapXep">
+      <option value="">-- Không sắp xếp --</option>
+      <option value="tang">Giá tăng dần</option>
+      <option value="giam">Giá giảm dần</option>
+    </select>
+  </div>
+  <p v-if="thongBao" class="notice">{{ thongBao }}</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Tên</th><th>Giá</th><th>Danh mục</th><th>Tồn kho</th><th>Tình trạng</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="sp in danhSachHienThi" :key="sp.id">
+        <td>{{ sp.id }}</td>
+        <td>{{ sp.ten }}</td>
+        <td>{{ dinhDangTien(sp.gia) }}</td>
+        <td>{{ sp.danhMuc }}</td>
+        <td>{{ sp.tonKho }}</td>
+        <td>
+          <span class="badge" :class="sp.tonKho > 0 ? 'con-hang' : 'het-hang'">
+            {{ sp.tonKho > 0 ? 'Còn hàng' : 'Hết hàng' }}
+          </span>
+        </td>
+        <td><button class="btn-xoa" @click="xoaSanPham(sp)">Xóa</button></td>
+      </tr>
+      <tr v-if="danhSachHienThi.length === 0">
+        <td colspan="7" style="text-align:center">Không có sản phẩm phù hợp</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="stats">
+    Đang hiển thị <strong>{{ danhSachHienThi.length }}</strong> / {{ sanPhams.length }} sản phẩm.
+    Tổng giá trị tồn kho: <strong>{{ dinhDangTien(tongGiaTriTonKho) }}</strong>
+  </div>
+
+  <fieldset>
+    <legend>Thêm sản phẩm mới</legend>
+    <div class="form">
+      <input v-model="spMoi.ten" placeholder="Tên sản phẩm">
+      <input v-model="spMoi.gia" type="number" placeholder="Giá">
+      <select v-model="spMoi.danhMuc">
+        <option v-for="dm in danhMucs" :key="dm" :value="dm">{{ dm }}</option>
+      </select>
+      <input v-model="spMoi.tonKho" type="number" placeholder="Tồn kho">
+      <button @click="themSanPham">Thêm</button>
+    </div>
+    <p v-for="loi in loiNhap" :key="loi" class="error">{{ loi }}</p>
+  </fieldset>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      trangThai: 'Đang tải...',
+      tuKhoa: '',
+      danhMucLoc: '',
+      kieuSapXep: '',
+      thongBao: '',
+      danhMucs: ['Điện thoại', 'Laptop', 'Phụ kiện'],
+      sanPhams: [
+        { id: 1, ten: 'iPhone 15', gia: 22000000, danhMuc: 'Điện thoại', tonKho: 5 },
+        { id: 2, ten: 'Samsung Galaxy S24', gia: 20000000, danhMuc: 'Điện thoại', tonKho: 0 },
+        { id: 3, ten: 'MacBook Air M3', gia: 28000000, danhMuc: 'Laptop', tonKho: 3 },
+        { id: 4, ten: 'Dell XPS 13', gia: 25000000, danhMuc: 'Laptop', tonKho: 0 },
+        { id: 5, ten: 'Tai nghe AirPods', gia: 4500000, danhMuc: 'Phụ kiện', tonKho: 10 },
+        { id: 6, ten: 'Chuột Logitech', gia: 600000, danhMuc: 'Phụ kiện', tonKho: 25 }
+      ],
+      spMoi: { ten: '', gia: '', danhMuc: 'Điện thoại', tonKho: '' },
+      loiNhap: []
+    };
+  },
+  computed: {
+    danhSachHienThi() {
+      const tk = this.tuKhoa.trim().toLowerCase();
+      let ds = this.sanPhams.filter(sp =>
+        sp.ten.toLowerCase().includes(tk) &&
+        (this.danhMucLoc === '' || sp.danhMuc === this.danhMucLoc)
+      );
+      if (this.kieuSapXep === 'tang') ds = [...ds].sort((a, b) => a.gia - b.gia);
+      else if (this.kieuSapXep === 'giam') ds = [...ds].sort((a, b) => b.gia - a.gia);
+      return ds;
+    },
+    tongGiaTriTonKho() {
+      return this.danhSachHienThi.reduce((tong, sp) => tong + sp.gia * sp.tonKho, 0);
+    }
+  },
+  watch: {
+    tuKhoa(giaTriMoi) {
+      this.thongBao = giaTriMoi.length === 1
+        ? 'Từ khóa chỉ có 1 ký tự, kết quả có thể chưa chính xác.'
+        : '';
+    }
+  },
+  methods: {
+    dinhDangTien(so) { return so.toLocaleString('vi-VN') + ' đ'; },
+    themSanPham() {
+      this.loiNhap = [];
+      const ten = this.spMoi.ten.trim();
+      const gia = Number(this.spMoi.gia);
+      const tonKho = Number(this.spMoi.tonKho);
+      if (ten === '') this.loiNhap.push('Tên sản phẩm không được rỗng.');
+      if (this.spMoi.gia === '' || isNaN(gia) || gia <= 0) this.loiNhap.push('Giá phải lớn hơn 0.');
+      if (this.spMoi.tonKho === '' || !Number.isInteger(tonKho) || tonKho < 0)
+        this.loiNhap.push('Tồn kho phải là số nguyên không âm.');
+      if (this.loiNhap.length > 0) return;
+      const idMoi = this.sanPhams.length ? Math.max(...this.sanPhams.map(sp => sp.id)) + 1 : 1;
+      this.sanPhams.push({ id: idMoi, ten, gia, danhMuc: this.spMoi.danhMuc, tonKho });
+      this.spMoi = { ten: '', gia: '', danhMuc: this.danhMucs[0], tonKho: '' };
+    },
+    xoaSanPham(sp) {
+      if (confirm(`Bạn có chắc muốn xóa "${sp.ten}"?`)) {
+        this.sanPhams = this.sanPhams.filter(item => item.id !== sp.id);
+      }
+    }
+  },
+  mounted() { this.trangThai = 'Sẵn sàng'; }
+}).mount('#app');
+</script>
+</body>
+</html>
