@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý sản phẩm</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 860px; margin: 30px auto; padding: 0 16px; }
+    h1 { font-size: 24px; }
+    form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
+    label { display: flex; flex-direction: column; font-size: 14px; gap: 4px; }
+    input { padding: 6px 8px; }
+    button { padding: 6px 12px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    th { background: #f2f2f2; }
+    td.num { text-align: right; }
+    .msg { padding: 8px 12px; margin-bottom: 12px; border-radius: 4px; }
+    .error { background: #fdecea; color: #a61b1b; }
+    .ok { background: #e7f6ea; color: #1d6b2f; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>Quản lý sản phẩm</h1>
+
+  <div v-if="message" class="msg" :class="isError ? 'error' : 'ok'">{{ message }}</div>
+
+  <form @submit.prevent="save">
+    <label>Tên sản phẩm
+      <input v-model="form.name" maxlength="100" required>
+    </label>
+    <label>Đơn giá
+      <input v-model.number="form.price" type="number" min="1" step="1" required>
+    </label>
+    <label>Số lượng tồn
+      <input v-model.number="form.stock" type="number" min="0" step="1" required>
+    </label>
+    <button type="submit">{{ editingId ? 'Lưu (sửa)' : 'Lưu (thêm)' }}</button>
+    <button type="button" v-if="editingId" @click="resetForm">Hủy</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr><th>Tên sản phẩm</th><th>Đơn giá (đồng)</th><th>Số lượng tồn</th><th>Thao tác</th></tr>
+    </thead>
+    <tbody>
+      <tr v-for="p in products" :key="p.id">
+        <td>{{ p.name }}</td>
+        <td class="num">{{ formatPrice(p.price) }}</td>
+        <td class="num">{{ p.stock }}</td>
+        <td>
+          <button @click="edit(p)">Sửa</button>
+          <button @click="remove(p)">Xóa</button>
+        </td>
+      </tr>
+      <tr v-if="products.length === 0">
+        <td colspan="4" style="text-align:center">Chưa có sản phẩm.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+const API = 'api/products.php';
+
+Vue.createApp({
+  data() {
+    return {
+      products: [],
+      form: { name: '', price: '', stock: '' },
+      editingId: null,
+      message: '',
+      isError: false
+    };
+  },
+  mounted() {
+    this.load();
+  },
+  methods: {
+    async request(url, options = {}) {
+      try {
+        const res = await fetch(url, {
+          headers: { 'Content-Type': 'application/json' },
+          ...options
+        });
+        return await res.json();
+      } catch (e) {
+        return { success: false, message: 'Không kết nối được tới máy chủ.' };
+      }
+    },
+    showMessage(text, error) {
+      this.message = text;
+      this.isError = error;
+    },
+    async load() {
+      const result = await this.request(API);
+      if (result.success) {
+        this.products = result.data;
+      } else {
+        this.showMessage(result.message || 'Không tải được danh sách.', true);
+      }
+    },
+    async save() {
+      const body = JSON.stringify({
+        name: this.form.name,
+        price: this.form.price,
+        stock: this.form.stock
+      });
+      const result = this.editingId
+        ? await this.request(`${API}?id=${this.editingId}`, { method: 'PUT', body })
+        : await this.request(API, { method: 'POST', body });
+
+      if (result.success) {
+        this.showMessage(result.message, false);
+        this.resetForm();
+        await this.load();
+      } else {
+        this.showMessage(result.message || 'Có lỗi xảy ra.', true);
+      }
+    },
+    edit(p) {
+      this.editingId = p.id;
+      this.form = { name: p.name, price: p.price, stock: p.stock };
+      this.message = '';
+    },
+    async remove(p) {
+      if (!confirm(`Bạn có chắc muốn xóa "${p.name}"?`)) return;
+      const result = await this.request(`${API}?id=${p.id}`, { method: 'DELETE' });
+      if (result.success) {
+        this.showMessage(result.message, false);
+        if (this.editingId === p.id) this.resetForm();
+        await this.load();
+      } else {
+        this.showMessage(result.message || 'Có lỗi xảy ra.', true);
+      }
+    },
+    resetForm() {
+      this.editingId = null;
+      this.form = { name: '', price: '', stock: '' };
+    },
+    formatPrice(v) {
+      return Number(v).toLocaleString('vi-VN');
+    }
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
